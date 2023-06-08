@@ -23,28 +23,45 @@ s3 = boto3.client(
 def make_written_file_resource(file_name: str, agent_id: int):
     path = get_config("RESOURCES_OUTPUT_ROOT_DIR")
     storage_type = get_config("STORAGE_TYPE")
-    file_type = "application/txt"
-
     root_dir = get_config('RESOURCES_OUTPUT_ROOT_DIR')
 
     if root_dir is not None:
-        root_dir = root_dir if root_dir.startswith("/") else os.getcwd() + "/" + root_dir
-        root_dir = root_dir if root_dir.endswith("/") else root_dir + "/"
+        root_dir = (
+            root_dir
+            if root_dir.startswith("/")
+            else f"{os.getcwd()}/{root_dir}"
+        )
+        root_dir = root_dir if root_dir.endswith("/") else f"{root_dir}/"
         final_path = root_dir + file_name
     else:
-        final_path = os.getcwd() + "/" + file_name
+        final_path = f"{os.getcwd()}/{file_name}"
     file_size = os.path.getsize(final_path)
     resource = None
     if storage_type == "FILE":
+        file_type = "application/txt"
+
         # Save Resource to Database
-        resource = Resource(name=file_name, path=path + "/" + file_name, storage_type=storage_type, size=file_size,
-                            type=file_type,
-                            channel="OUTPUT",
-                            agent_id=agent_id)
+        resource = Resource(
+            name=file_name,
+            path=f"{path}/{file_name}",
+            storage_type=storage_type,
+            size=file_size,
+            type=file_type,
+            channel="OUTPUT",
+            agent_id=agent_id,
+        )
     elif storage_type == "S3":
         bucket_name = get_config("BUCKET_NAME")
         file_name = file_name.split('.')
-        path = 'output/' + file_name[0] + '_' + str(datetime.datetime.now()).replace(' ', '').replace('.', '').replace(':', '') + '.' + file_name[1]
+        path = (
+            f'output/{file_name[0]}_'
+            + str(datetime.datetime.now())
+            .replace(' ', '')
+            .replace('.', '')
+            .replace(':', '')
+            + '.'
+            + file_name[1]
+        )
         try:
             s3.upload_file(final_path, bucket_name, path)
             print("File uploaded successfully!")
@@ -74,11 +91,15 @@ class WriteFileTool(BaseTool):
         final_path = file_name
         root_dir = get_config('RESOURCES_OUTPUT_ROOT_DIR')
         if root_dir is not None:
-            root_dir = root_dir if root_dir.startswith("/") else os.getcwd() + "/" + root_dir
-            root_dir = root_dir if root_dir.endswith("/") else root_dir + "/"
+            root_dir = (
+                root_dir
+                if root_dir.startswith("/")
+                else f"{os.getcwd()}/{root_dir}"
+            )
+            root_dir = root_dir if root_dir.endswith("/") else f"{root_dir}/"
             final_path = root_dir + file_name
         else:
-            final_path = os.getcwd() + "/" + file_name
+            final_path = f"{os.getcwd()}/{file_name}"
 
         try:
             with open(final_path, 'w', encoding="utf-8") as file:
